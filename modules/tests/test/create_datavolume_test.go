@@ -37,7 +37,7 @@ var _ = Describe("Create DataVolume", func() {
 		Entry("empty dv", &testconfigs.CreateDVTestConfig{
 			TaskRunTestConfig: testconfigs.TaskRunTestConfig{
 				ServiceAccount: CreateDataVolumeFromManifestServiceAccountName,
-				ExpectedLogs:   "manifest does not contain DataVolume kind",
+				ExpectedLogs:   "dv-manifest param has to be specified",
 			},
 			TaskData: testconfigs.CreateDVTaskData{
 				Datavolume: nil,
@@ -46,7 +46,7 @@ var _ = Describe("Create DataVolume", func() {
 		Entry("malformed dv", &testconfigs.CreateDVTestConfig{
 			TaskRunTestConfig: testconfigs.TaskRunTestConfig{
 				ServiceAccount: CreateDataVolumeFromManifestServiceAccountName,
-				ExpectedLogs:   "manifest does not contain DataVolume kind",
+				ExpectedLogs:   "could not read DV manifest: kind or apiVersion missing",
 			},
 			TaskData: testconfigs.CreateDVTaskData{
 				Datavolume: datavolume.NewBlankDataVolume("malformed").WithoutTypeMeta().Build(),
@@ -92,22 +92,19 @@ var _ = Describe("Create DataVolume", func() {
 		err := dv.WaitForSuccessfulDataVolume(f.CdiClient, dataVolume.Namespace, dataVolume.Name, config.GetWaitForDVTimeout())
 		Expect(err).ShouldNot(HaveOccurred())
 	},
-		Entry("blank wait", &testconfigs.CreateDVTestConfig{
-			TaskRunTestConfig: testconfigs.TaskRunTestConfig{
-				ServiceAccount: CreateDataVolumeFromManifestServiceAccountName,
-				Timeout:        Timeouts.SmallDVCreation,
-				ExpectedLogs:   "Created",
-			},
-			TaskData: testconfigs.CreateDVTaskData{
-				Datavolume:     datavolume.NewBlankDataVolume("blank").Build(),
-				WaitForSuccess: true,
-			},
-		}),
 		Entry("blank no wait", &testconfigs.CreateDVTestConfig{
 			TaskRunTestConfig: testconfigs.TaskRunTestConfig{
 				ServiceAccount: CreateDataVolumeFromManifestServiceAccountName,
 				Timeout:        Timeouts.SmallDVCreation,
-				ExpectedLogs:   "Created",
+			},
+			TaskData: testconfigs.CreateDVTaskData{
+				Datavolume: datavolume.NewBlankDataVolume("blank").Build(),
+			},
+		}),
+		Entry("blank wait", &testconfigs.CreateDVTestConfig{
+			TaskRunTestConfig: testconfigs.TaskRunTestConfig{
+				ServiceAccount: CreateDataVolumeFromManifestServiceAccountName,
+				Timeout:        Timeouts.SmallDVCreation,
 			},
 			TaskData: testconfigs.CreateDVTaskData{
 				Datavolume:     datavolume.NewBlankDataVolume("blank-wait").Build(),
@@ -119,7 +116,6 @@ var _ = Describe("Create DataVolume", func() {
 				ServiceAccount: CreateDataVolumeFromManifestServiceAccountName,
 				LimitTestScope: ClusterTestScope,
 				Timeout:        Timeouts.SmallDVCreation,
-				ExpectedLogs:   "Created",
 			},
 			TaskData: testconfigs.CreateDVTaskData{
 				Datavolume:     datavolume.NewBlankDataVolume("same-ns-cluster-scope").Build(),

@@ -14,11 +14,14 @@ metadata:
   name: {{ task_name }}
 spec:
   description: >-
-    This task creates a DataVolume with oc client. It can optionally wait until
-    CDI imports finishes.
+    This task creates a DataVolume. It can optionally wait until CDI imports finishes.
   params:
     - name: manifest
       description: YAML manifest of a DataVolume resource to be created.
+      type: string
+    - name: namespace
+      description: Namespace where to create the DV. (defaults to manifest namespace or active namespace)
+      default: ""
       type: string
     - name: waitForSuccess
       description: Set to "true" or "false" if container should wait for Ready condition of a DataVolume.
@@ -30,7 +33,16 @@ spec:
     - name: namespace
       description: The namespace of DataVolume that was created.
   steps:
-    - name: create
-      image: {{ main_image }}
-      script: |
-        {{ create_dv_script | indent( width=8 ) }}
+    - name: create-datavolume-from-manifest
+      image: "{{ main_image }}:{{ version }}"
+      command:
+        - create-datavolume-from-manifest
+      args:
+        - "--output=yaml"
+      env:
+        - name: DV_MANIFEST
+          value: $(params.manifest)
+        - name: DV_NAMESPACE
+          value: $(params.namespace)
+        - name: WAIT_FOR_SUCCESS
+          value: $(params.waitForSuccess)

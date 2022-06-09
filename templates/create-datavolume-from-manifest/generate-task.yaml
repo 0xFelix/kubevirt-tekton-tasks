@@ -3,11 +3,9 @@
   hosts: 127.0.0.1
   gather_facts: no
   vars_files:
-  - ../../configs/create-datavolume-from-manifest.yaml
-  - ../../scripts/ansible/enums.yaml
-  - ../../scripts/ansible/common.yaml
-  vars:
-    additional_scripts_dir: .
+    - ../../configs/create-datavolume-from-manifest.yaml
+    - ../../scripts/ansible/enums.yaml
+    - ../../scripts/ansible/common.yaml
   tasks:
     - name: Init
       include: "{{ repo_dir }}/scripts/ansible/init-task-generation.yaml"
@@ -16,12 +14,10 @@
         src: "{{ manifest_templates_dir }}/{{ task_category }}.yaml"
         dest: "{{ manifests_output_dir_tmp }}/{{ task_name }}.yaml"
         mode: "{{ default_file_mode }}"
-      vars:
-        create_dv_script: "{{ lookup('file', '{{ additional_scripts_dir }}/create-datavolume-script.sh') }}"
     - name: Generate roles
       include: "{{ repo_dir }}/scripts/ansible/generate-roles.yaml"
       with_items:
-      - { role_type: ClusterRole, prefix: zz- }
+        - { role_type: ClusterRole, prefix: zz- }
       vars:
         role_output_dir: "{{ manifests_output_dir_tmp }}"
     - name: Prepare examples dist directory
@@ -37,7 +33,7 @@
         dest: "{{ examples_taskruns_output_dir }}/{{ item.taskrun_with_flavor_name }}.yaml"
         mode: "{{ default_file_mode }}"
       with_items:
-        - { taskrun_with_flavor_name: "create-dv-from-manifest-taskrun" }
+        - { taskrun_with_flavor_name: "{{ task_name }}-taskrun" }
     - name: Generate README
       template:
         src: "{{ readmes_templates_dir }}/README.md"

@@ -241,11 +241,14 @@ metadata:
   name: create-datavolume-from-manifest
 spec:
   description: >-
-    This task creates a DataVolume with oc client. It can optionally wait until
-    CDI imports finishes.
+    This task creates a DataVolume. It can optionally wait until CDI imports finishes.
   params:
     - name: manifest
       description: YAML manifest of a DataVolume resource to be created.
+      type: string
+    - name: namespace
+      description: Namespace where to create the DV. (defaults to manifest namespace or active namespace)
+      default: ""
       type: string
     - name: waitForSuccess
       description: Set to "true" or "false" if container should wait for Ready condition of a DataVolume.
@@ -257,41 +260,19 @@ spec:
     - name: namespace
       description: The namespace of DataVolume that was created.
   steps:
-    - name: create
-      image: quay.io/openshift/origin-cli:4.11
-      script: |
-        #!/usr/bin/env bash
-
-        set -e
-
-        TMP_DV_YAML_FILENAME="/tmp/datavolume.yaml"
-        TMP_DV_RESULTS_FILENAME="/tmp/dv_results"
-
-        echo "$(inputs.params.manifest)" > "$TMP_DV_YAML_FILENAME"
-
-        if ! grep -q "kind: DataVolume$" "$TMP_DV_YAML_FILENAME"; then
-            1>&2 echo "manifest does not contain DataVolume kind!"
-            exit 1
-        fi
-
-        oc create -f "$TMP_DV_YAML_FILENAME" -o  jsonpath='{.metadata.name} {.metadata.namespace}' > "$TMP_DV_RESULTS_FILENAME"
-
-        sed -i 's/ /\n/g' "$TMP_DV_RESULTS_FILENAME"
-        readarray -t DV_OUTPUT_ARRAY < "$TMP_DV_RESULTS_FILENAME"
-
-        DV_NAME="${DV_OUTPUT_ARRAY[0]}"
-        DV_NAMESPACE="${DV_OUTPUT_ARRAY[1]}"
-
-        echo -n "$DV_NAME" > /tekton/results/name
-        echo -n "$DV_NAMESPACE" > /tekton/results/namespace
-
-        echo "Created $DV_NAME Datavolume in $DV_NAMESPACE namespace."
-
-        if [ "$(inputs.params.waitForSuccess)" == true ]; then
-            echo "Waiting for Ready condition."
-            # TODO: detect failed imports and don't wait until wait timeouts
-            oc wait "datavolumes.cdi.kubevirt.io/$DV_NAME" --namespace="$DV_NAMESPACE" --for="condition=Ready" --timeout=720h
-        fi
+    - name: create-datavolume-from-manifest
+      image: "quay.io/kubevirt/tekton-task-create-datavolume-from-manifest:v0.9.2"
+      command:
+        - create-datavolume-from-manifest
+      args:
+        - "--output=yaml"
+      env:
+        - name: DV_MANIFEST
+          value: $(params.manifest)
+        - name: DV_NAMESPACE
+          value: $(params.namespace)
+        - name: WAIT_FOR_SUCCESS
+          value: $(params.waitForSuccess)
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1

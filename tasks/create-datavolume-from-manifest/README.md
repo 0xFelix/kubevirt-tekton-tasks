@@ -10,6 +10,7 @@ Please see [RBAC permissions for running the tasks](../../docs/tasks-rbac-permis
 ### Parameters
 
 - **manifest**: YAML manifest of a DataVolume resource to be created.
+- **namespace**: Namespace where to create the DV. (defaults to manifest namespace or active namespace)
 - **waitForSuccess**: Set to `true` or `false` if container should wait for Ready condition of a DataVolume.
   
 ### Results
